@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Story &mdash; Free Website Template, Free HTML5 Template by freehtml5.co</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Free HTML5 Website Template by freehtml5.co" />
+    <meta name="keywords" content="free website templates, free html5, free template, free bootstrap, free website template, html5, css3, mobile first, responsive" />
+    <meta name="author" content="freehtml5.co" />
+
+
+
+    <!-- Facebook and Twitter integration -->
+    <meta property="og:title" content="" />
+    <meta property="og:image" content="" />
+    <meta property="og:url" content="" />
+    <meta property="og:site_name" content="" />
+    <meta property="og:description" content="" />
+    <meta name="twitter:title" content="" />
+    <meta name="twitter:image" content="" />
+    <meta name="twitter:url" content="" />
+    <meta name="twitter:card" content="" />
+
+
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="../css/animate.css">
+    <!-- Icomoon Icon Fonts-->
+    <link rel="stylesheet" href="../css/icomoon.css">
+    <!-- Bootstrap  -->
+    <link rel="stylesheet" href="../css/bootstrap.css">
+
+    <!-- Theme style  -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <!-- Modernizr JS -->
+    <script src="../js/modernizr-2.6.2.min.js"></script>
+
+
+
+
+</head>
+<body class="single">
+
+<div class="fh5co-loader"></div>
+
+<div id="page">
+    <div id="fh5co-aside" style="background-image: url(../images/background.jpg)" data-stellar-background-ratio="0.5">
+        <div class="overlay"></div>
+        <nav role="navigation">
+            <ul>
+                <li><a href="../index.html"><i class="icon-home"></i></a></li>
+            </ul>
+        </nav>
+        <div class="page-title">
+            <img src="../images/project-6.jpg">
+            <span>July 14, 2016</span>
+            <h2>WebApi 集成 Swagger</h2>
+        </div>
+    </div>
+    <div id="fh5co-main-content">
+        <div class="fh5co-post">
+            <div class="fh5co-entry padding">
+                <div>
+                    <ul>
+                        <li>
+                            <p>Swagger（俗称：丝袜哥）是什么东西？</p>
+                            <p>Swagger 是一个规范和完整的框架，用于生成、描述、调用和可视化 RESTful 风格的 Web 服务。总体目标是使客户端和文件系统作为服务器以同样的速度来更新。文件的方法，参数和模型紧密集成到服务器端的代码，允许API来始终保持同步。Swagger 让部署管理和使用功能强大的API从未如此简单。</p>
+                            <p>丝袜哥可以干什么？</p>
+                            <p>接口，服务可视化，非常清晰，好用</p>
+                            <p>做接口测试，方便测试人员使用</p>
+                        </li>
+                        <li>
+                            <p>Swagger怎么和WebApi集成？</p>
+                            <p>第一步：创建WebApi工程 </p>
+                        </li>
+                    </ul>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714181858311-7244970.png" />  
+                    </p>
+                    <pre><code>第二步：引入swagger的包（Swashbuckle、swagger两个）  
+</code></pre>
+
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714182130107-233325465.png" />  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714182201107-1622403781.png" />  
+                    </p>
+                    <pre><code>第三步：打开解决方案属性--&gt;生成，勾选XML文档文件，保存  
+</code></pre>
+
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714182418045-768629914.png" />  
+                    </p>
+                    <pre><code>swagger在生成xml注释文档之后会保存到当前appdomaim下的bin目录，用于在UI上展示
+
+第四步：找到swaggerconfig文件的注册方法，去掉下面注释的这一句代码，用于在UI上加载生成的xml文档  
+</code></pre>
+
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714182808607-271824339.png" />  
+                    </p>
+                    <p>GetXmlCommentsPath方法的实现如下：读取注释文件的路径  
+                    </p>
+                    <pre><code>private static string GetXmlCommentsPath()
+    {
+        return string.Format(&quot;{0}/bin/WebApiSwaggerDemo.XML&quot;, System.AppDomain.CurrentDomain.BaseDirectory);
+    }  
+</code></pre>
+
+                    <p>第五步：打开swggernet文件，注释掉下面的两行代码（估计是nuget包中的代码没有更新导致这个异常出现）  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714183253092-2040626506.png" />  
+                    </p>
+                    <p>第六步：swagger已经集成成功了，在浏览器输入：http://localhost:37033/swagger/ui/index 就可以看到界面了  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714183402045-1199945255.png" />  
+                    </p>
+                    <p>第七步：开发自己的API模块  
+                    </p>
+                    <pre><code>    /// &lt;summary&gt;
+    /// 更新订单信息
+    /// &lt;/summary&gt;
+    /// &lt;param name=&quot;input&quot;&gt;&lt;/param&gt;
+    /// &lt;returns&gt;&lt;/returns&gt;
+    [HttpPost, Route(&quot;order/UpdateOrder&quot;)]
+    public OutPutResult UpdateOrder(BusinessModel input)
+    {
+        return new OutPutResult() { Success = false, Message = &quot;恭喜你更新订单成功！&quot; };
+    }  
+</code></pre>
+
+                    <p>　指定路由地址  order/UpdateOrder  和访问方式 Post/Get/Put</p>
+                    <p>第八步：测试调用  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714195426623-378818629.png" />  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714195516232-2138776649.png" />  
+                    </p>
+                    <p>通过Swaggerui可以通过你的Comtroller来分模块浏览和测试接口列表  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201607/423536-20160714195719607-457406676.png" />  
+                    </p>
+                    <p>这对于公司内部使用太方便了，所有的API 可以供开发和测试来调用，但是需要注意的一点是，生产环境还是要做权限控制的，因为POST和PUT方法是可以直接操作数据库的。</p>
+                    <p>公司一直在用，但是没时间总结和分享，最近写下来希望对大家有帮助。</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fh5co-navigation">
+        
+</div>
+
+<footer></footer>
+
+<div class="gototop js-top">
+    <a href="#" class="js-gotop"><i class="icon-arrow-up"></i></a>
+</div>
+
+<!-- jQuery -->
+<script src="../js/jquery.min.js"></script>
+<!-- jQuery Easing -->
+<script src="../js/jquery.easing.1.3.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<!-- Waypoints -->
+<script src="../js/jquery.waypoints.min.js"></script>
+<!-- Stellar Parallax -->
+<script src="../js/jquery.stellar.min.js"></script>
+<!-- Main -->
+<script src="../js/main.js"></script>
+</body>
+</html>
+

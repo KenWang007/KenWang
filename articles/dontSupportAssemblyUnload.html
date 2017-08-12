@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Story &mdash; Free Website Template, Free HTML5 Template by freehtml5.co</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Free HTML5 Website Template by freehtml5.co" />
+    <meta name="keywords" content="free website templates, free html5, free template, free bootstrap, free website template, html5, css3, mobile first, responsive" />
+    <meta name="author" content="freehtml5.co" />
+
+
+
+    <!-- Facebook and Twitter integration -->
+    <meta property="og:title" content="" />
+    <meta property="og:image" content="" />
+    <meta property="og:url" content="" />
+    <meta property="og:site_name" content="" />
+    <meta property="og:description" content="" />
+    <meta name="twitter:title" content="" />
+    <meta name="twitter:image" content="" />
+    <meta name="twitter:url" content="" />
+    <meta name="twitter:card" content="" />
+
+
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="../css/animate.css">
+    <!-- Icomoon Icon Fonts-->
+    <link rel="stylesheet" href="../css/icomoon.css">
+    <!-- Bootstrap  -->
+    <link rel="stylesheet" href="../css/bootstrap.css">
+
+    <!-- Theme style  -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <!-- Modernizr JS -->
+    <script src="../js/modernizr-2.6.2.min.js"></script>
+
+
+
+
+</head>
+<body class="single">
+
+<div class="fh5co-loader"></div>
+
+<div id="page">
+    <div id="fh5co-aside" style="background-image: url(../images/background.jpg)" data-stellar-background-ratio="0.5">
+        <div class="overlay"></div>
+        <nav role="navigation">
+            <ul>
+                <li><a href="../index.html"><i class="icon-home"></i></a></li>
+            </ul>
+        </nav>
+        <div class="page-title">
+            <img src="../images/project-2.jpg">
+            <span>September 10, 2016</span>
+            <h2>为什么.Net平台不支持程序集卸载（Assembly.Unload）</h2>
+        </div>
+    </div>
+    <div id="fh5co-main-content">
+        <div class="fh5co-post">
+            <div class="fh5co-entry padding">
+                <div>
+                    <p>&emsp;&emsp;我们知道在.net平台中反射提供了在运行时动态的获得程序或程序集中每一个类型（包括类、结构、委托、接口和枚举等）的成员和成员的信息，从而使得我们开发人员在运行时能够利用这些信息构造和使用对象。我们知道反射中可以通过System.Reflection.Assembly命名空间下的 Assembly.Load 动态的加载程序集信息，获取我们想要的一切信息。那么当我们动态加载完程序集并对其使用完之后，我们想卸载掉它，不想在内存中留下垃圾信息，这时我们发现Assembly并没有提供Assembly.UnLoad的方法让我们动态的卸载程序集，这是为什么呢？  
+                    </p>
+                    <p>&emsp;&emsp;首先我们之所以要实现 Assembly.Unload 函数，主要是为了回收空间和更新版本两类需求。前者在使用完 Assembly 后回收其占用资源，后者则卸载当前版本载入更新的版本。例如 ASP.NET 中对页面用到的 Assembly 程序的动态更新就是一个很好的使用示例。但如果提供了 Assembly.Unload 函数会引发下面的一些问题：  
+                    </p>
+                    <ul>
+                        <li>
+                            <p>为了保证CLR 中代码所引用的代码地址都是有效的，必须跟踪诸如 GC 对象和 COM CCW 之类的特殊应用。否则会出现 Unload 一个 Assembly 后还有 CLR 对象或 COM 组件使用到这个 Assembly 的代码或数据地址，进而导致访问异常。而为了避免这种错误进行的跟踪，目前是在 AppDomain 一级进行的，如果要加入 Assembly.Unload 支持，则跟踪的粒度必须降到 Assembly 一级，这虽然在技术上不是不能实现，但代价太大了。  
+                            </p>
+                        </li>
+                        <li>
+                            <p>如果支持 Assembly.Unload 则必须跟踪每个 Assembly 的代码使用到的句柄和对现有托管代码的引用。例如现在 JITer 在编译方法时，生成代码都在一个统一的区域，如果要支持卸载 Assembly 则必须对每个 Assembly 都进行独立编译。此外还有一些类似的资源使用问题，如果要分离跟踪技术上虽然可行，但代价较大，特别是在诸如 WinCE 这类资源有限的系统上问题比较明显。  
+                            </p>
+                        </li>
+                        <li>
+                            <p>CLR 中支持跨 AppDomain 的 Assembly 载入优化，也就是 domain neutral 的优化，使得多个 AppDomain 可以共享一份代码，加快载入速度。而目前无法处理卸载 domain neutral 类型代码。这也导致实现 Assembly.Unload 完整语义的困难性。  
+                            </p>
+                        </li>
+                    </ul>
+                    <p>基于上述的愿意目前并不支持动态的卸载程序集信息。</p>
+                    <p>想了解更详细的原因可参考大神的博客：<a href="https://blogs.msdn.microsoft.com/jasonz/2004/05/31/why-isnt-there-an-assembly-unload-method/">https://blogs.msdn.microsoft.com/jasonz/2004/05/31/why-isnt-there-an-assembly-unload-method/</a></p>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+</div>
+
+<div class="fh5co-navigation">
+        
+</div>
+
+<footer></footer>
+
+<div class="gototop js-top">
+    <a href="#" class="js-gotop"><i class="icon-arrow-up"></i></a>
+</div>
+
+<!-- jQuery -->
+<script src="../js/jquery.min.js"></script>
+<!-- jQuery Easing -->
+<script src="../js/jquery.easing.1.3.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<!-- Waypoints -->
+<script src="../js/jquery.waypoints.min.js"></script>
+<!-- Stellar Parallax -->
+<script src="../js/jquery.stellar.min.js"></script>
+<!-- Main -->
+<script src="../js/main.js"></script>
+</body>
+</html>
+

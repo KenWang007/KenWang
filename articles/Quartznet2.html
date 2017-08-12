@@ -1,0 +1,321 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Story &mdash; Free Website Template, Free HTML5 Template by freehtml5.co</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Free HTML5 Website Template by freehtml5.co" />
+    <meta name="keywords" content="free website templates, free html5, free template, free bootstrap, free website template, html5, css3, mobile first, responsive" />
+    <meta name="author" content="freehtml5.co" />
+
+
+
+    <!-- Facebook and Twitter integration -->
+    <meta property="og:title" content="" />
+    <meta property="og:image" content="" />
+    <meta property="og:url" content="" />
+    <meta property="og:site_name" content="" />
+    <meta property="og:description" content="" />
+    <meta name="twitter:title" content="" />
+    <meta name="twitter:image" content="" />
+    <meta name="twitter:url" content="" />
+    <meta name="twitter:card" content="" />
+
+
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="../css/animate.css">
+    <!-- Icomoon Icon Fonts-->
+    <link rel="stylesheet" href="../css/icomoon.css">
+    <!-- Bootstrap  -->
+    <link rel="stylesheet" href="../css/bootstrap.css">
+
+    <!-- Theme style  -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <!-- Modernizr JS -->
+    <script src="../js/modernizr-2.6.2.min.js"></script>
+
+
+
+
+</head>
+<body class="single">
+
+<div class="fh5co-loader"></div>
+
+<div id="page">
+    <div id="fh5co-aside" style="background-image: url(../images/background.jpg)" data-stellar-background-ratio="0.5">
+        <div class="overlay"></div>
+        <nav role="navigation">
+            <ul>
+                <li><a href="../index.html"><i class="icon-home"></i></a></li>
+            </ul>
+        </nav>
+        <div class="page-title">
+            <img src="../images/project-5.jpg" >
+            <span>September 29, 2016</span>
+            <h2>Quartz.net 开源job调度框架（二）定点执行</h2>
+        </div>
+    </div>
+    <div id="fh5co-main-content">
+        <div class="fh5co-post">
+            <div class="fh5co-entry padding">
+                <div>
+                <p>&emsp;&emsp;在上一篇  Quartz.net 开源job调度框架（一） 中讲到了基本的使用以及配置job轮训数据执行</p>
+                <p>&emsp;&emsp;这种做法适用于对数据操作实时性要求不高的场景，在实际场景中还有一种比较常用的场景就是我们需要在某一个时间点立即执行某个操作，比如商城做抢购活动，同时开启多个活动在不同的时间点开始促销。如果我们采用轮训数据库的方式来实现的话会出现处理数据不及时的情况，因为每次都需要从数据库捞取一批次的数据，根据状态或者设定的活动开启时间循环比对，如果达到时间点就更新数据状态，开启活动，每一批次处理的数据都需要时间，很容易就会在某一个活动已经到达开启的时间点，但是job执行不及时导致活动的开启时间晚于设定的时间点，误差根据数据量以及内部逻辑的复杂度会递增。这样就会导致某一个活动在设定的开启时间点没有准时开启，如果是商城做抢购倒计时活动的话，这中延迟对客户来说是不被接受的。下面是我最近做的H5 商城的实例，这是一个抢购活动的列表页，多个活动在不同时间点开启或结束。</p>
+                <p>这是进行中的活动：  
+                </p>
+                <p><img src="http://images2015.cnblogs.com/blog/423536/201609/423536-20160929092210563-1877308643.png" />  
+                </p>
+                <p>这是就绪状态，等待开启的活动：  
+                </p>
+                <p><img src="http://images2015.cnblogs.com/blog/423536/201609/423536-20160929092349000-1850200230.png" />  
+                </p>
+                <p>&emsp;&emsp;我们想要在活动设定的某一个时间点准时开启，就需要使用Quartz 中的另外一种方式来配置Job 在固定时间点执行。</p>
+                <p>&emsp;&emsp;在次之前我们还要考虑的一个问题就是抢购的活动是通过后台添加的，随时都有可能增加，所以我们不仅仅是只从数据库捞一次活动的数据，而是需要定时轮训数据库找出需要执行的活动，根据后台设定的开启或者结束时间，添加到Quartz的调度队列，让它在固定时间点自己执行。</p>
+                <p>&emsp;&emsp;看到这里大家可能就要问开头我们就说到不采用轮训的方式来做，为什么这里又要说轮训。注意了，我开始提到的是不轮询每一个活动，在满足开启条件（状态，开启/结束时间）的情况下再开启。而这里说到的轮询指的是轮询有没有新添加进来的活动，这是完全不一样的概念。</p>
+                <p>闲话不多说，上代码。先按照前一篇中讲到的轮询方式新建一个MonitorJob：  
+                </p>
+                <pre><code>namespace JobSchedule.JobMonitorSchedule
+{
+  public class JobMonitorJob : IJob
+  {
+    NLog.Logger log = NLog.LogManager.GetCurrentClassLogger();
+    public void Execute(IJobExecutionContext context)
+    {
+        log.Info(&quot;监控Job开启执行------------&quot;);
+        var processDataList = FlashItemOfflineDBHelper.GetOfflineFlashPromotion();
+
+        if (processDataList != null &amp;&amp; processDataList.Count &gt; 0)
+        {
+            processDataList.ForEach(data =&gt;
+            {
+
+                if (data.Status == 2)
+                {
+                    if (!ScheduleBase.Scheduler.CheckExists(JobKey.Create(&quot;上线商品作业：&quot; + data.SysNo, &quot;定时触发作业组&quot; + +data.SysNo)))
+                    {
+                        var job = JobBuilder.Create(typeof(ItemOnlineJob))
+                                       .WithIdentity(&quot;上线商品作业：&quot; + data.SysNo, &quot;定时触发作业组&quot; + +data.SysNo)
+                                       .UsingJobData(&quot;ItemSysNo&quot;, data.SysNo)
+                                       .Build();
+                        var trigger = TriggerBuilder.Create()
+                                            .WithIdentity(&quot;上线商品作业Trigger&quot; + data.SysNo, &quot;作业触发器&quot; + data.SysNo)
+                                            .StartAt(data.PromotionStartTime.AddSeconds(ConstValue.ItemOnlineStartOffset))
+                                            .Build();
+
+                        ScheduleBase.Scheduler.ScheduleJob(job, trigger);
+                        log.Info(string.Format(&quot;监控Job开启执行，商品上线作业已加入调度池, 活动编号:{0}，活动名称：{1}, 活动开始时间:{2}&quot;, data.SysNo, data.PromotionName, data.PromotionStartTime));
+                    }
+                }
+                if (data.Status == 3)
+                {
+                    if (!ScheduleBase.Scheduler.CheckExists(JobKey.Create(&quot;下线商品作业：&quot; + data.SysNo, &quot;定时触发作业组&quot; + +data.SysNo)))
+                    {
+                        var job = JobBuilder.Create(typeof(ItemOfflineJob))
+                                       .WithIdentity(&quot;下线商品作业：&quot; + data.SysNo, &quot;定时触发作业组&quot; + +data.SysNo)
+                                       .UsingJobData(&quot;ItemSysNo&quot;, data.SysNo)
+                                       .Build();
+                        var trigger = TriggerBuilder.Create()
+                                            .WithIdentity(&quot;下线商品作业Trigger：&quot; + data.SysNo, &quot;作业触发器&quot; + data.SysNo)
+                                            .StartAt(data.PromotionEndTime.AddSeconds(ConstValue.ItemOfflineStartOffset))
+                                            .Build();
+                        ScheduleBase.Scheduler.ScheduleJob(job, trigger);
+
+                        log.Info(string.Format(&quot;监控Job开启执行，商品下线作业已加入调度池, 活动编号:{0}，活动名称：{1}, 活动结束时间:{2}&quot;, data.SysNo, data.PromotionName, data.PromotionEndTime));
+                    }
+                }
+            });
+        }
+      }
+    }
+}    
+</code></pre>
+
+                <p>&emsp;&emsp;根据每一个活动的状态来判断是需要加入到开启队列的，还是加入到结束队列的（2：就绪状态的活动，即将要开启；3：已经开启的活动，即将要结束）</p>
+                <p>&emsp;&emsp;我们可以看到创建一个作业需要两个条件，第一创建你要执行的实例，第二告诉Quartz你想要在什么时候执行。可以看到我们用到了UsingJobData的方法，这是Quartz中提供的内部方法，用于给加入到执行队列中的作业传递数据用的，有6次重载，可以传递下面几种类型的数据：  
+                </p>
+                <pre><code>public JobBuilder UsingJobData(string key, string value);
+
+public JobBuilder UsingJobData(string key, int value);
+
+public JobBuilder UsingJobData(string key, long value);
+
+public JobBuilder UsingJobData(string key, float value);
+
+public JobBuilder UsingJobData(string key, double value);
+
+public JobBuilder UsingJobData(string key, bool value);  
+</code></pre>
+
+                <p>在这里我传递的是活动编号。</p>
+                <p>创建完MonitorJob之后还是按照上一篇文章讲的方式加入到调度器：  
+                </p>
+                <pre><code>public partial class JobManager : ServiceBase
+{
+    public JobManager()
+    {
+        InitializeComponent();
+    }
+
+    protected override void OnStart(string[] args)
+    {
+        //开启调度器
+        ScheduleBase.Scheduler.Start();
+
+        //把作业，触发器加入调度器
+        ScheduleBase.AddSchedule(new AutoVoidUnPaidFlashOrderService());
+
+        ScheduleBase.AddSchedule(new AutoVoidUnPaidNormalOrderService());
+
+        ScheduleBase.AddSchedule(new JobMonitorService());
+    }
+
+    protected override void OnStop()
+    {
+        ScheduleBase.Scheduler.Shutdown(true);
+    }
+}  
+</code></pre>
+
+                <p>&emsp;&emsp;这样基本算是完成了，接下来就是具体的实现类了，需要注意的是我们在使用 ScheduleBase.Scheduler.ScheduleJob(job, trigger) 创建作业的时候Job名称不能重复，所以在上面我们是根据活动Id来创建的。</p>
+                <p>接下来看实现类 ItemOnlineJob(活动上线job)：  
+                </p>
+                <pre><code>public class ItemOnlineJob : IJob
+   {
+     NLog.Logger log = NLog.LogManager.GetCurrentClassLogger();
+     public void Execute(IJobExecutionContext context)
+     {
+       log.Info(&quot;促销活动上线Job开启执行------------&quot;);
+       try
+       {
+           var sysno = context.JobDetail.JobDataMap.GetIntValue(&quot;ItemSysNo&quot;);
+           log.Info(string.Format(&quot;促销活动上线Job：上线处理开始，促销活动编号：{0}&quot;, sysno));
+           if (sysno &gt; 0)
+           {
+               var promotion = FlashItemOfflineDBHelper.GetOfflineFlashPromotionBySysNo(sysno);
+               //就绪的活动并且已经到达开启时间自动开启
+               if (promotion != null &amp;&amp; promotion.Status == (int)FlashSaleStatusType.BeReady)
+               {
+                   log.Info(&quot;促销活动上线Job：上线处理请求开始，促销活动编号：&quot; + sysno);
+
+                   FlashItemOfflineDBHelper.UpdatePromotionStatus(sysno, (int)FlashSaleStatusType.Processing);
+
+                   log.Info(&quot;抢购商品到期上线Job：活动已开启，活动编号：&quot; + promotion.SysNo);
+               }
+           }
+       }
+       catch (Exception ex)
+       {
+           log.Error(&quot;促销活动上线Job执行异常：&quot; + ex.Message);
+       }
+   }
+}   
+</code></pre>
+
+                <p>可以看 context.JobDetail.JobDataMap 中存储的就是我们在创建作业的时候传的数据，在Job实时执行的时候可以取出来。</p>
+                <p>context.JobDetail.JobDataMap中提供了对应的几个方法：</p>
+                <pre><code>public virtual double GetDoubleValue(string key);
+
+public virtual double GetDoubleValueFromString(string key);
+
+public virtual float GetFloatValue(string key);
+
+public virtual float GetFloatValueFromString(string key);
+
+public virtual int GetIntValue(string key);
+
+public virtual int GetIntValueFromString(string key);
+
+public virtual long GetLongValue(string key);
+
+public virtual long GetLongValueFromString(string key);  
+</code></pre>
+
+                <p>ItemOfflineJob用于控制活动结束下架，实现和上线一样。  
+                </p>
+                <pre><code>namespace JobSchedule.JobMonitorSchedule
+{
+   public class ItemOfflineJob : IJob
+   {
+    NLog.Logger log = NLog.LogManager.GetCurrentClassLogger();
+    public void Execute(IJobExecutionContext context)
+    {
+        log.Info(&quot;促销活动下线Job开启执行------------&quot;);
+        try
+        {
+            var sysno = context.JobDetail.JobDataMap.GetIntValue(&quot;ItemSysNo&quot;);
+            log.Info(string.Format(&quot;促销活动下线Job：下线处理开始，促销活动编号：{0}&quot;, sysno));
+            if (sysno &gt; 0)
+            {
+                var promotion = FlashItemOfflineDBHelper.GetOfflineFlashPromotionBySysNo(sysno); 
+                if (promotion != null &amp;&amp; promotion.Status == (int)FlashSaleStatusType.Processing)
+                {
+                    log.Info(&quot;促销活动下线Job：下线处理请求开始，促销活动编号：&quot; + sysno);
+
+                    FlashItemOfflineDBHelper.UpdatePromotionOffline(sysno, (int)FlashSaleStatusType.Finished);
+
+                    log.Info(&quot;抢购商品到期下线Job：活动已开启，活动编号：&quot; + promotion.SysNo);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            log.Error(&quot;促销活动下线Job执行异常：&quot; + ex.Message);
+        }
+    }
+  }
+}  
+</code></pre>
+
+                <p>代码实现完了，我们来看看Web界面上的呈现如下：  
+                </p>
+                <p><img src="http://images2015.cnblogs.com/blog/423536/201609/423536-20160929105241625-46618614.png" />  
+                </p>
+                <p>顺便再总结一下本次项目中遇到的几个坑：</p>
+                <ul>
+                    <li>活动界面倒计时  
+                    </li>
+                </ul>
+                <p><img src="http://images2015.cnblogs.com/blog/423536/201609/423536-20160929105422422-577413170.png" />  
+                </p>
+                <p>&emsp;&emsp;最开始的时候计算倒计时的时候偷懒了，从客户端取了时间来做倒计时，导致界面上显示的倒计时不准确，这个只能取服务端的时间。实在是不应该犯的低级错误。</p>
+                <ul>
+                    <li>倒计时时间乱跳的问题，场景是我有两个倒计时的活动，从活动列表页面先后进入到详情页面的时候两个计时器都在跑，导致倒计时的时间一直在闪动</li>
+                </ul>
+                <p>&emsp;&emsp;最后分析原因是我的倒计时是在每一次进入到详情页面的时候开启的，先后有两个活动的时候就会触发两个定时器，这时界面上的显示就是两个倒计时同时切换，导致时间闪动</p>
+                <p>&emsp;&emsp;试想想如果有3个或者更多个，界面时间直接就看不清了。最后的做法是在每一次进入到详情界面的时候把界面上所有的定时器清空，然后重新生成，这样就解决了。</p>
+                <p>以前没有做过移动端的开发，本次算是踩着坑过来了，也学习了不少，总结一下，继续前行。</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fh5co-navigation">
+        
+</div>
+
+<footer></footer>
+
+<div class="gototop js-top">
+    <a href="#" class="js-gotop"><i class="icon-arrow-up"></i></a>
+</div>
+
+<!-- jQuery -->
+<script src="../js/jquery.min.js"></script>
+<!-- jQuery Easing -->
+<script src="../js/jquery.easing.1.3.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<!-- Waypoints -->
+<script src="../js/jquery.waypoints.min.js"></script>
+<!-- Stellar Parallax -->
+<script src="../js/jquery.stellar.min.js"></script>
+<!-- Main -->
+<script src="../js/main.js"></script>
+</body>
+</html>
+
