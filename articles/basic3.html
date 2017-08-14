@@ -1,0 +1,230 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Story &mdash; Free Website Template, Free HTML5 Template by freehtml5.co</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Free HTML5 Website Template by freehtml5.co" />
+    <meta name="keywords" content="free website templates, free html5, free template, free bootstrap, free website template, html5, css3, mobile first, responsive" />
+    <meta name="author" content="freehtml5.co" />
+
+
+
+    <!-- Facebook and Twitter integration -->
+    <meta property="og:title" content="" />
+    <meta property="og:image" content="" />
+    <meta property="og:url" content="" />
+    <meta property="og:site_name" content="" />
+    <meta property="og:description" content="" />
+    <meta name="twitter:title" content="" />
+    <meta name="twitter:image" content="" />
+    <meta name="twitter:url" content="" />
+    <meta name="twitter:card" content="" />
+
+
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="../css/animate.css">
+    <!-- Icomoon Icon Fonts-->
+    <link rel="stylesheet" href="../css/icomoon.css">
+    <!-- Bootstrap  -->
+    <link rel="stylesheet" href="../css/bootstrap.css">
+
+    <!-- Theme style  -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <!-- Modernizr JS -->
+    <script src="../js/modernizr-2.6.2.min.js"></script>
+
+
+
+
+</head>
+<body class="single">
+
+<div class="fh5co-loader"></div>
+
+<div id="page">
+    <div id="fh5co-aside" style="background-image: url(../images/background.jpg)" data-stellar-background-ratio="0.5">
+        <div class="overlay"></div>
+        <nav role="navigation">
+            <ul>
+                <li><a href="../index.html"><i class="icon-home"></i></a></li>
+            </ul>
+        </nav>
+        <div class="page-title">
+            <img src="../images/person_1.jpg" alt="Free HTML5 by FreeHTMl5.co">
+            <span>June 03, 2017</span>
+            <h2>C# 类型基础（下）</h2>
+        </div>
+    </div>
+    <div id="fh5co-main-content">
+        <div class="fh5co-post">
+            <div class="fh5co-entry padding">
+                <div>
+                    <p>前面介绍了基本的类型，接下来我们讲讲类型的转换</p>
+                    <p><strong>值类型的两种表现形式：未装箱和已装箱 ，而引用类型总是处于装箱形式</strong></p>
+                    <pre><code>int count = 10;
+
+object obj = count;
+</code></pre>
+
+                    <p>装箱：值类型转换为引用类型，C#编译器可以自动完成装箱操作</p>
+                    <pre><code>a.在托管堆中分配好内存。内存量 = 值类型字段的内存量 + 类型对象指针 + 同步索引块
+
+b.将值类型的字段复制到新分配的堆地址中
+
+c.返回对象的地址
+</code></pre>
+
+                    <p>int count1 = (int)obj;</p>
+                    <p>拆箱：引用类型转换为值类型，需要显式完成</p>
+                    <pre><code>a.获取obj对象的引用
+
+b.将值从堆中复制到基于栈的值类型实例 coun1中
+
+c.如果obj的引用地址为null，则抛出 NullReferenceException 异常
+
+d.如果obj引用指向的的对象不是int类型的已装箱的实例，抛出 InvalidCastException 异常
+</code></pre>
+
+                    <p>千言万语，我只想上代码！ </p>
+                    <pre><code>Int32  a = 5 ;
+
+object o = a;
+
+Int16  b = (Int16) o ;  
+</code></pre>
+
+                    <p>上面拆箱能否成功？</p>
+                    <p>答案是不能，因为Int32的范围比Int16大，转换的时候就抛异常了。</p>
+                    <p>接下来这个例子很有意思，好多人估计都不知所以然。来，坐稳了，我们继续开车！ </p>
+                    <pre><code>Int32 v = 5 ;
+
+object o = v ;
+
+v = 123;
+
+Console.WriteLine( v + “and “ + (Int32) o);　　 
+</code></pre>
+
+                    <p><strong><em>问题：上面例子发生了多少次装箱操作 ？</em></strong></p>
+                    <p>有的人看到代码就一拍脑袋说：1次，2次......，好吧，这么说我不怪你，因为即使工作几年的老司机也不一定能一眼看出来是几次装箱。</p>
+                    <p>但是当你觉得不太确定的时候就要去找出答案，拨开迷雾才能看到真相。我们来个简单粗暴的方法，看IL代码：  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201706/423536-20170603141338039-1884211161.png" /> </p>
+                    <p>清楚了吧，明白了吧，简直是一目了然啊，三个box，那就是三次装箱了，中间还发生过一次拆箱，那就是Int32转的那一次</p>
+                    <p><strong>那么为什么是三次呢？</strong></p>
+                    <p>第一次很明显，第二次和第三次是发生在 Console.WriteLine 里面的，我们看到箭头标注的地方，为什么会调用了 string.Concat方法呢，首先我们知道这个函数是用来拼接字符串的，那就稍微有点明白了，我们可以看到现在给WriteLine 方法传的是3个参数，那实际上WriteLine 有没有三个参数的重载呢？答案是有，但是很遗憾，并不是符合我们给的三个参数类型的。那怎么办呢，我们知道编译器是非常聪明的，它非常确信的知道我们传入的三个参数中第二个是个字符串，它会默认调用WriteLine 的string重载方法，那这样的话就要求传入的是一个完整的string对象，而我们是三个，那就需要把三个参数合成一个，于是乎编译器很聪明的自动调用了string.Concat 方法，接收三个参数，而Concat方法接收的三个参数都是object的，所以一切都明白了，第一个参数装箱一次，第三个参数又装箱一次，所以总共就是三次装箱。
+                        **
+                        上面的代码怎么能减少装箱次数？最少用几次装箱？各位看官自己想想吧，这个已经很简单了**</p>
+                    <p>分析完上边的例子，按照惯例我们接着上代码：</p>
+                    <pre><code>Int32 v = 5 ;
+
+object o = v ;
+
+v = 123;
+
+Console.WriteLine( v );
+
+v = (Int32) o;
+
+Console.WriteLine( v );　　  
+</code></pre>
+
+                    <p>同样的问题：上述代码输出什么结果？发生了多少次装箱 ？</p>
+                    <p>答案会是一样吗？自己思考一下吧</p>
+                    <h2>类型转换</h2>
+                    <p><strong>对象类型转换：</strong></p>
+                    <p>a.将对象转换为它对应的任何基类型，反之则不行</p>
+                    <p>b.使用as操作符来转型，强制类型转换</p>
+                    <p><strong>基元类型转换：</strong></p>
+                    <p>隐式转换：编译器确定转换“安全”的时候，才允许隐式转换。对于数值类型，不安全意味着转换可能会丢失精度或者数量级</p>
+                    <pre><code>int32 a = 5 ;
+
+int64 b  = a ;
+</code></pre>
+
+                    <p>显式转换：显示指定需要转换的类型</p>
+                    <pre><code>Byte c = (Byte) a ;
+</code></pre>
+
+                    <p>对基元类型执行的许多算术运算符都可能造成溢出，比如下面代码： </p>
+                    <pre><code>Byte b = 100 ;
+
+b = (Byte) (b + 200) 
+</code></pre>
+
+                    <p>因为Byte的默认长度是255，而相加之后的结果已经超出了最大长度了，但是运行并没有报错，这是为什么呢？答案是编译器在作怪,大多数的溢出都是悄悄发生的，编译器并不会报错，但是大多数情况下都会导致程序行为异常,C# 编译器允许开发人员决定如何处理溢出，编译器溢出检查默认是关闭的，我们可以手动打开检查溢出的开关.</p>
+                    <p>为了处理溢出，我们讲讲下面这两个操作符</p>
+                    <p><strong>checked 和 unchecked 操作符</strong>  
+                    </p>
+                    <pre><code>Byte b = 100 ;
+b = checked((Byte) (b + 200));  // 抛出OverflowException 异常
+
+checked 语句
+
+checked{                  //开始一个checked块
+  Byte b = 100 ;
+  b =(Byte) (b + 200) ;  // 溢出检查
+}                        // 结束一个checked块  
+</code></pre>
+
+                    <p>相信大家已经看得很清楚了，加了checked之后就会抛出异常，而恰巧编译器又是默认的unchecked。</p>
+                    <p>那么checked和unchecked 本质上的区别是什么呢？ 据说按惯例我又要上代码了，来，我们继续</p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201706/423536-20170603143216680-1614948854.png" />  
+                    </p>
+                    <p>本质区别就是生成的IL 指令不一样 ，指令决定了是否检查溢出</p>
+                    <p>checked：add.ovf           unchecked：add</p>
+                    <p>最后我们再来说说创建一个对象的过程究竟发生了什么事：</p>
+                    <p><strong>创建类型的对象</strong></p>
+                    <p>Person person = new Person();</p>
+                    <p><strong>new 做了什么事情？</strong></p>
+                    <pre><code>1.计算类型及所有基类型中定义的所有实例字段需要的字节数 （堆上的每个对象都需要一些额外的成员信息：类型对象指针＋同步索引块，这些成员用于CLR管理对象，会计入对象的大小）
+
+2.从托管堆中分配指定类型要求的字节数，从而分配对象的内存，分配的所有字节都为0
+
+3.初始化对象的类型对象指针 和 同步索引块
+
+4. 调用类型的实例构造器，同时初始化类型的实例字段，最终调用的都是基类的构造器
+
+5.返回指向新建对象的引用地址
+
+垃圾回收器检查托管堆中是否有不再使用的任何对象就回收
+</code></pre>
+
+                    <p>最后留个问题，欢迎一起讨论：new 是创建对象，分配内存，如果创建完之后发现多余了，是否可以delete掉对象 ？</p>
+                    <p>其实还想说一句：一直以来.NET程序员备受鄙视，因为微软麻麻对我们太好了，基本不需要我们做什么，编译器和CLR已经替我们做了太多的事情了，导致我们就只会用，只知道怎么用而不是到为什么，这对我们的长期发展来说是非常不好的，所以希望大家有时间多看看底层的东西，多看看IL代码，搞清楚编译器在中间干了什么事情，这是很重要的。</p>
+                    <p>再给大家推荐一本书：《C# Via CLR》讲的非常好的一本书，很底层。</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fh5co-navigation">
+        
+</div>
+
+<footer></footer>
+
+<div class="gototop js-top">
+    <a href="#" class="js-gotop"><i class="icon-arrow-up"></i></a>
+</div>
+
+<!-- jQuery -->
+<script src="../js/jquery.min.js"></script>
+<!-- jQuery Easing -->
+<script src="../js/jquery.easing.1.3.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<!-- Waypoints -->
+<script src="../js/jquery.waypoints.min.js"></script>
+<!-- Stellar Parallax -->
+<script src="../js/jquery.stellar.min.js"></script>
+<!-- Main -->
+<script src="../js/main.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,233 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Story &mdash; Free Website Template, Free HTML5 Template by freehtml5.co</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Free HTML5 Website Template by freehtml5.co" />
+    <meta name="keywords" content="free website templates, free html5, free template, free bootstrap, free website template, html5, css3, mobile first, responsive" />
+    <meta name="author" content="freehtml5.co" />
+
+
+
+    <!-- Facebook and Twitter integration -->
+    <meta property="og:title" content="" />
+    <meta property="og:image" content="" />
+    <meta property="og:url" content="" />
+    <meta property="og:site_name" content="" />
+    <meta property="og:description" content="" />
+    <meta name="twitter:title" content="" />
+    <meta name="twitter:image" content="" />
+    <meta name="twitter:url" content="" />
+    <meta name="twitter:card" content="" />
+
+
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="../css/animate.css">
+    <!-- Icomoon Icon Fonts-->
+    <link rel="stylesheet" href="../css/icomoon.css">
+    <!-- Bootstrap  -->
+    <link rel="stylesheet" href="../css/bootstrap.css">
+
+    <!-- Theme style  -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <!-- Modernizr JS -->
+    <script src="../js/modernizr-2.6.2.min.js"></script>
+
+
+
+
+</head>
+<body class="single">
+
+<div class="fh5co-loader"></div>
+
+<div id="page">
+    <div id="fh5co-aside" style="background-image: url(../images/background.jpg)" data-stellar-background-ratio="0.5">
+        <div class="overlay"></div>
+        <nav role="navigation">
+            <ul>
+                <li><a href="../index.html"><i class="icon-home"></i></a></li>
+            </ul>
+        </nav>
+        <div class="page-title">
+            <img src="../images/person_1.jpg" >
+            <span>June 03, 2017</span>
+            <h2>C# 类型基础（上）</h2>
+        </div>
+    </div>
+    <div id="fh5co-main-content">
+        <div class="fh5co-post">
+            <div class="fh5co-entry padding">
+                <div>
+                    <p>C#类型都派生自System.Object</p>
+                    <p>祖先的优良传统：Object的公共方法</p>
+                    <pre><code>Equals: 对象的同一性而非相等性
+
+GetHashCode：返回对象的值的哈希码 
+
+ToString：默认返回类型的完整名称 this.GetType().FullName
+
+GetType：返回从Type派生的一个对象的实例，即对象的元数据信息，此方法为非虚方法,为防止类来重写该方法，隐瞒真实的类型信息，从而破坏类型的安全性
+</code></pre>
+
+                    <p><strong>GetHashCode有什么用？</strong></p>
+                    <p>判断对象是否相等的快速检查。Equals方法和GetHashCode方法的重写应该同时存在。如果Equals方法返回的结果是true，那么GetHashCode方法返回的结果应该相同。如果GetHashCode方法返回的结果相同，那么Equals方法返回的结果不一定是true。</p>
+                    <pre><code>public class Student
+{
+    public string FirstName { get; private set; }
+    public string LastName { get; private set; }
+
+    public Student(string firstName, string lastName)
+    {
+        this.FirstName = firstName;
+        this.LastName = lastName;
+    }
+
+    public override bool Equals(object obj)
+    {
+        Console.WriteLine(&quot;Called Equals&quot;);
+        if (obj == null || this.GetType() != obj.GetType())
+            return false;
+        return this.FirstName == ((Student)obj).FirstName
+            &amp;&amp; this.LastName == ((Student)obj).LastName;
+    }
+
+    public override int GetHashCode()
+    {
+        Console.WriteLine(&quot;Called GetHashCode&quot;);
+        return this.FirstName.GetHashCode();
+    }
+}
+
+
+  static void Main(string[] args)
+    {
+
+        Student student1 = new Student(&quot;Jun&quot;, &quot;Lei&quot;);
+        Student student2 = new Student(&quot;Kaifu&quot;, &quot;Li&quot;);
+        Student student3 = new Student(&quot;Jun&quot;, &quot;Zhu&quot;); 
+
+        //第一次调用
+        var dic = new Dictionary&lt;Student, object&gt;();
+        dic[student1] = new object();
+        Console.WriteLine(&quot;==================&quot;);
+        Console.WriteLine(dic.ContainsKey(student2));
+        Console.WriteLine(&quot;==================&quot;);
+        Console.WriteLine(dic.ContainsKey(student3));
+        //第二次调用
+        Student student4 = new Student(&quot;Jun&quot;, &quot;Lei&quot;);
+        var dic1 = new Dictionary&lt;Student, object&gt;();
+        dic1[student4] = new object();
+        Console.WriteLine(&quot;==================&quot;);
+        Console.WriteLine(dic1.ContainsKey(new Student(&quot;Jun&quot;, &quot;Lei&quot;)));
+
+    }  
+</code></pre>
+
+                    <p>说明：在上面的Student类中我们重写了Equals和GetHashCode这两个基类的方法，在针对Dictionary这种散列值的key值判断的时候系统默认先调用GetHashCode判断，然后再掉用Equals方法判断，微软约定如果两个对象的哈希码不一样，则两个对象肯定不相等。所以在判断对象相等时系统默认先调用此方法做最简单的判断。举个例子：要比较两个人是不是兄弟，第一眼肯定是看两个人的性别是否相同（GetHashCode），如果性别都不一样，肯定不是兄弟，然后再判断长相，血型，DNA等的相似性（Equals）。</p>
+                    <p>上述代码第一次调用时，输出结果如下：</p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201706/423536-20170603125416508-1890244775.png" /> </p>
+                    <p>&emsp;&emsp;在Student中我们重写了GetHashCode方法，让它获取FirstName的哈希值，这也就是意味着如果两个Student的FirstName相同的话这两个对象判断相等的时候系统默认返回的哈希值将是一样的，我们可以看到student1和student2 对象中的每一个字段都不相同，所以根绝GethashCode直接判断不相等，所以系统直接返回false，没有调用Equals方法判断。而Student3对象和Student1对象的FirstName是一样的，所以感觉哈希值已经判断不出来了，所以又调用了一次Equals方法进行深入判断，由于LastName不一样，所以返回结果为false。由上述代码我们可以得出结论，系统判断对象相等性的时候先调用GetHashCode判断，如果对象的哈希值一样，再根据Equals的实现判断，否则直接返回false。</p>
+                    <p>如果我们把GetHashCode的实现注释掉，直接用系统的方法的话，返回结果如下：  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201706/423536-20170603130949102-1135673513.png" /> </p>
+                    <p>因为Student1和Student3是两个不同的对象，所以哈希码肯定不一样，所以就不会调用Equals方法再继续进行判断了</p>
+                    <p><strong>基元类型</strong></p>
+                    <p>基元类型：编译器直接支持的数据类型称之为基元类型，它直接映射到Framework类库（FCL）中存在的类型，比如 int  —&gt; System.Int32</p>
+                    <pre><code>int a = 0;   //最方便的语法
+System.Int32 a = 0 ;  //方便的语法
+int  a = new int() ; //不方便的语法
+System.Int32  a = new System.Int32();  //最不方便的语法　　
+</code></pre>
+
+                    <p>问题1：以上四行代码生成的IL代码完全一样吗 ？（完全一样，可以根据生成的IL代码判断）</p>
+                    <p>问题2：在32位操作系统上运行时，int代表32位整数，在64位操作系统上运行时，int代表64位整数这种说法 
+                        正确吗？（完全错误，不管在什么操作系统上都是代表32位整数）</p>
+                    <p>下面是C#中的基元类型和FCL中类型的对应关系  
+                    </p>
+                    <p><img style="width:900px;" src="http://images2015.cnblogs.com/blog/423536/201706/423536-20170603131354118-1603397946.png" /> </p>
+                    <p><strong>引用类型：</strong></p>
+                    <p>a.内存分配到托管堆上 </p>
+                    <p>b.托管堆上分配的每个对象都会包含:对象本身的值，类型对象指针，同步索引块</p>
+                    <p>c.对象传递的是内存的引用地址</p>
+                    <p>d.没有被使用的情况下，会被垃圾回收</p>
+                    <p>eg:类都是引用类型，string</p>
+                    <p><strong>值类型：</strong></p>
+                    <p>a.内存分配到它声明的地方</p>
+                    <p>b.分配的内存只包含本身的值</p>
+                    <p>c.传递的是值本身</p>
+                    <p>d.不会被垃圾回收</p>
+                    <p>e.所有值类型都是隐式封闭的 sealed(防止一个值类型用作其他类型的基类型)</p>
+                    <p>f.所有值类型都是 System.ValueType 的后代</p>
+                    <p>eg: int , decimal , double, struct  
+                    </p>
+                    <p><img src="http://images2015.cnblogs.com/blog/423536/201706/423536-20170603132036743-1252728745.png" /></p>
+                    <p>关于引用类型的类型对象指针和同步索引块，下面的博客将的很详细，不过我还是没有完全理解，所有在此不做详细解释。</p>
+                    <p>类型对象指针和同步索引块：<a href="http://www.cnblogs.com/yuyijq/archive/2009/03/13/1410071.html">http://www.cnblogs.com/yuyijq/archive/2009/03/13/1410071.html</a></p>
+                    <p>Code1： </p>
+                    <pre><code>string str = &quot;ab&quot;;
+string str1 = str;
+str = &quot;abc&quot;;
+str1 = ?　　
+</code></pre>
+
+                    <p>上面代码你一眼看过去肯定以为str1会输出 abc ，因为是引用类型啊，我们改了引用的值之后它也会跟这边，因为引用的是同一片内存地址呀。如果真这样认为那我只能说太年轻了。</p>
+                    <p>输出依然是 ab，具体原因如下：</p>
+                    <p><strong>String的不可变性：</strong>string 对象是只读的，一旦创建了该对象，就不能修改该对象的值。看来似乎修改了，实际是string经过了特殊处理，每次改变值时都会建立一个新的string对象，变量会指向这个新的对象，而原来的还是指向原来的对象，所以不会改变。这也是string效率低下的原因，如果经常改变string的值则应该使用StringBuilder而不使用string</p>
+                    <p><strong>StringBulider:</strong> 通过分配一个缓存（工作区）来解决这些问题，在工作区中对字符串应用StringBuilder类的相关方法。包括添加，删除，移除，插入和替换字符等等。执行完之后，将调用ToString方法把工作区中的内容转换为一个字符串，方便赋给一个字符串变量。这样StringBuilder会提升一些性能。 </p>
+                    <p>Code2: </p>
+                    <pre><code>string  str1 = &quot;string&quot; ;
+string  str2 = &quot;string&quot; ;
+Console .WriteLine(string .ReferenceEquals(str1, str2)); 
+</code></pre>
+
+                    <p>我们虽然初始化了两个字符串对象，看起来是分配了两个内存地址，但其实不是的，CLR对此作了优化，具体解释如下：</p>
+                    <p>当CLR初始化的时，会创建一个内部的散列表，Key为字符串，Value为指向托管堆中字符串对象的引用。当构造str1时，先会去散列表中查询是否存在”string”字符串，如果不存在那么会在托管堆中构造一个新的String对象，然后将”string”字符串和指向该对象的引用添加到散列表中，当构造str2时，由于散列表中存在 Key为”string”的引用，于是将Value值赋值给str2，那么str1和str2引用的是同一个String对象</p>
+                    <p><strong>注意：string 是不可变的引用的类型，CLR在运行时进行了优化，相同的string实际上在内存中只存在一份</strong> </p>
+                    <p>Code3: </p>
+                    <pre><code>   public struct Point
+   {
+       public int x = 0;   
+       public int y = 0;  
+   }　　
+</code></pre>
+
+                    <p>上面的代码是编译不通过的，原因是：</p>
+                    <p>值类型不支持无参数构造函数,当一个值类型没有提供任何有参构造函数的时候,是不能够对字段在定义中进行初始化。</p>
+                    <p><strong>为什么微软不支持值类型的无参构造函数？</strong></p>
+                    <p>防止开发人员不去显式调用构造函数，对于值类型的变量来说，如果不去显式调用构造函数的话，编译器不会在生成的IL代码中添加调用构造函数的代码的。</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fh5co-navigation">
+        
+</div>
+
+<footer></footer>
+
+<div class="gototop js-top">
+    <a href="#" class="js-gotop"><i class="icon-arrow-up"></i></a>
+</div>
+
+<!-- jQuery -->
+<script src="../js/jquery.min.js"></script>
+<!-- jQuery Easing -->
+<script src="../js/jquery.easing.1.3.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<!-- Waypoints -->
+<script src="../js/jquery.waypoints.min.js"></script>
+<!-- Stellar Parallax -->
+<script src="../js/jquery.stellar.min.js"></script>
+<!-- Main -->
+<script src="../js/main.js"></script>
+</body>
+</html>
+
